@@ -24,7 +24,7 @@ public class HoursSubmit : MonoBehaviour {
 	public string path;
 	public RawImage image;
 
-	private string BASE_URL = "https://volunteerhourslghs.formstack.com/forms/index.php";
+	private string BASE_URL = "https://volunteerhourslghs.formstack.com/forms/volunteer";
 	// Use this for initialization
 	void Update () {
 		username = Name.text;
@@ -58,6 +58,8 @@ public class HoursSubmit : MonoBehaviour {
 		form.AddField("field64110250", o);
 		form.AddField("field64110249", s);
 
+        
+
        /*
         int width = Screen.width;
         int height = Screen.height;
@@ -88,14 +90,15 @@ public class HoursSubmit : MonoBehaviour {
         }
 		*/
         byte[] rawData = form.data;
-		WWW www  = new WWW(BASE_URL, rawData);
-		yield return www;
-        /*
+        UnityWebRequest www = UnityWebRequest.Put(BASE_URL, rawData);
+        yield return www.SendWebRequest();
+        //yield return www;
+        
         if (www.error == null)
-            Debug.Log("upload done :" + www.text);
+            Debug.Log("upload done :");
         else
             Debug.Log("Error during upload: " + www.error);
-            */
+            
     }
 	// Update is called once per frame
 	public void Send () {
