@@ -24,7 +24,7 @@ public class HoursSubmit : MonoBehaviour {
 	public string path;
 	public RawImage image;
 
-	private string BASE_URL = "https://docs.google.com/forms/u/1/d/e/1FAIpQLSdyHlsmfREBkKcP1lnA4dH_sYj5_Svrcc_YQ-CQ0a384EKixg/formResponse";
+	private string BASE_URL = "https://volunteerhourslghs.formstack.com/forms/index.php";
 	// Use this for initialization
 	void Update () {
 		username = Name.text;
@@ -39,14 +39,26 @@ public class HoursSubmit : MonoBehaviour {
 	}
 	IEnumerator Post(string n, string h, string o, string s, string p)
 	{
-		yield return new WaitForEndOfFrame();
-		WWWForm form = new WWWForm();
-		form.AddField("entry.1583625957", n);
-		form.AddField("entry.655267041", h);
-		form.AddField("entry.1831294178", o);
-		form.AddField("entry.1664739340", s);
+        /*
+        WWW localFile = new WWW(path);
+        yield return localFile;
+        if (localFile.error == null)
+            Debug.Log("Loaded file successfully");
+        else
+        {
+            Debug.Log("Open file error: " + localFile.error);
+            yield break; // stop the coroutine here
+        }
 
-       // Create a texture the size of the screen, RGB24 format
+        yield return new WaitForEndOfFrame();
+        */
+		WWWForm form = new WWWForm();
+		form.AddField("field64110253", n);
+		form.AddField("field64110251", h);
+		form.AddField("field64110250", o);
+		form.AddField("field64110249", s);
+
+       /*
         int width = Screen.width;
         int height = Screen.height;
         Texture2D tex = image.texture as Texture2D;
@@ -60,6 +72,8 @@ public class HoursSubmit : MonoBehaviour {
         Destroy( tex );
 
         form.AddBinaryData("entry.1374423980", bytes, "image.png", "image/png");
+        */
+        //form.AddBinaryData("file", localFile.bytes, "proof", "text/plain");
 
         /*
         using (var w = UnityWebRequest.Post(p, form))
@@ -73,10 +87,16 @@ public class HoursSubmit : MonoBehaviour {
             }
         }
 		*/
-		byte[] rawData = form.data;
+        byte[] rawData = form.data;
 		WWW www  = new WWW(BASE_URL, rawData);
 		yield return www;
-	}
+        /*
+        if (www.error == null)
+            Debug.Log("upload done :" + www.text);
+        else
+            Debug.Log("Error during upload: " + www.error);
+            */
+    }
 	// Update is called once per frame
 	public void Send () {
 		username = Name.text;
