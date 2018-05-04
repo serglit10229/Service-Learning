@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using UnityEngine.UI;
 using UnityEngine.Networking;
 using UnityEngine;
-using UnityEditor;
+using System.IO;
+using UnityGoogleDrive;
+
 
 
 public class HoursSubmit : MonoBehaviour {
@@ -18,13 +20,19 @@ public class HoursSubmit : MonoBehaviour {
 	private string hours;
 	private string organization;
 	private string signature;
+	private string link;
 
 	public bool imageReady = false;
 
 	public string path;
-	public RawImage image;
+	public Texture2D image;
 
-	private string BASE_URL = "https://volunteerhourslghs.formstack.com/forms/volunteer";
+	public GameObject S;
+	public GameObject F;
+
+	private string BASE_URL = "https://docs.google.com/forms/u/1/d/e/1FAIpQLSdyHlsmfREBkKcP1lnA4dH_sYj5_Svrcc_YQ-CQ0a384EKixg/formResponse";
+
+    private GoogleDriveFiles.CreateRequest request;
 	// Use this for initialization
 	void Update () {
 		username = Name.text;
@@ -52,12 +60,21 @@ public class HoursSubmit : MonoBehaviour {
 
         yield return new WaitForEndOfFrame();
         */
-		WWWForm form = new WWWForm();
-		form.AddField("field64110253", n);
-		form.AddField("field64110251", h);
-		form.AddField("field64110250", o);
-		form.AddField("field64110249", s);
 
+
+		WWWForm form = new WWWForm();
+		form.AddField("entry.1583625957", n);
+		form.AddField("entry.655267041", h);
+		form.AddField("entry.1831294178", o);
+		form.AddField("entry.1664739340", s);
+		form.AddField("entry.1333156437", p);
+		byte[] rawData = form.data;
+		WWW www = new WWW(BASE_URL, rawData);
+		yield return www;
+        if (www.error == null)
+            StartCoroutine("Success");
+        else
+            StartCoroutine("Fail");
         
 
        /*
@@ -88,7 +105,7 @@ public class HoursSubmit : MonoBehaviour {
                 print("Finished Uploading Screenshot");
             }
         }
-		*/
+		
         byte[] rawData = form.data;
         UnityWebRequest www = UnityWebRequest.Put(BASE_URL, rawData);
         yield return www.SendWebRequest();
@@ -98,7 +115,22 @@ public class HoursSubmit : MonoBehaviour {
             Debug.Log("upload done :");
         else
             Debug.Log("Error during upload: " + www.error);
+            */
             
+    }
+
+    IEnumerator Success()
+    {
+    	S.SetActive(true);
+    	yield return new WaitForSeconds(2f);
+    	S.SetActive(false);
+    }
+
+    IEnumerator Fail()
+    {
+    	F.SetActive(true);
+    	yield return new WaitForSeconds(2f);
+    	F.SetActive(false);
     }
 	// Update is called once per frame
 	public void Send () {
@@ -106,28 +138,48 @@ public class HoursSubmit : MonoBehaviour {
 		hours = Hours.text.ToString();
 		organization = Organization.text;
 		signature = Signature.text;
-
-		StartCoroutine(Post(username, hours, organization, signature, path));
+		Upload();
 	}
 
 	public void Open()
 	{
-		path = "file:///" + EditorUtility.OpenFilePanel("Overwrite with png", "", "png");
-		GetImage();
-		imageReady = true;
+        NativeGallery.Permission permission = NativeGallery.GetImageFromGallery( ( path ) =>
+        {
+            Debug.Log( "Image path: " + path );
+            if( path != null )
+            {
+                // Create Texture from selected image
+                image = NativeGallery.LoadImageAtPath( path, -1);
+                Upload();
+                imageReady = true;
+                if( image == null )
+                {
+                    Debug.Log( "Couldn't load texture from " + path );
+                    return;
+                }
+            }
+        }, "Select a PNG image", "image/png", -1); 
+
 	}
 
-	void GetImage()
-	{
-		if(path != null)
-		{
-			UpdateImage();
-		}
-	}
 
-	void UpdateImage()
-	{
-		WWW wwwi = new WWW(path);
-		image.texture = wwwi.texture;
-	}
+    void Upload ()
+    {
+        Texture2D texCopy = new Texture2D(image.width, image.height, image.format, image.mipmapCount > 1);
+        texCopy.LoadRawTextureData(image.GetRawTextureData());
+        texCopy.Apply();
+
+        var content = texCopy.EncodeToPNG();
+        var file = new UnityGoogleDrive.Data.File() { Name = "proof.png", Content = content, MimeType = "image/png" };
+        request = GoogleDriveFiles.Create(file);
+        request.Fields = new List<string> { "id", "name", "size", "createdTime"};
+        request.Send().OnDone += PrintResult;
+    }
+
+    private void PrintResult (UnityGoogleDrive.Data.File file)
+    {
+        //result = string.Format("Name: {0} Size: {1:0.00}MB Created: {2:dd.MM.yyyy HH:MM:ss}", file.Name, file.Size * .000001f, file.CreatedTime);
+        link = "drive.google.com/open?id=" + file.Id;
+		StartCoroutine(Post(username, hours, organization, signature, link));
+    }
 }
